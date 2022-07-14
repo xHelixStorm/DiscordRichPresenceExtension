@@ -1,12 +1,20 @@
 var prevPort = null;
 var prevHost = null;
 
-chrome.storage.local.get("port", (data) => {
-    prevPort = data.port;
+chrome.storage.local.get(null, (data) => {
+    if (data.port) {
+        prevPort = data.port;
+    }
+    else {
+        prevPort = "0";
+    }
+    if (data.host) {
+        prevHost = data.host;
+    }
+    else {
+        prevHost = "127.0.0.1";
+    }
     $("#inputPort").val(prevPort);
-});
-chrome.storage.local.get("host", (data) => {
-    prevHost = data.host;
     $("#inputHost").val(prevHost);
 });
 
