@@ -1,0 +1,36 @@
+body {
+    background-color: aliceblue;
+}
+
+div {
+    width: 100%;
+    margin: 15px;
+}
+
+input {
+    width: 150px;
+    margin-left: 5px;
+}
+
+p.red {
+    color: red;
+}
+
+p {
+    visibility: hidden;
+}
+
+p.green {
+    color: green;
+}
+
+button {
+    width: 60px;
+    margin-left: 5px;
+}
+
+i {
+    margin-left: 3px;
+    visibility: hidden;
+    color: cadetblue;
+}

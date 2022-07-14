@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="options.css">
+        <script src="./fontawesome.js"></script>
+        <script src="./jquery-3.6.0.js"></script>
+    </head>
+    <body>
+        <div>
+            <p>Choose a different host and port!</p>
+
+            <label for="inputPort">Port Number:</label><br />
+            <input type="number" id="inputPort" min="0" max="99999" /><br /><br />
+
+            <label for="inputHost">Host:</label><br />
+            <input type="text" id="inputHost" /><br /><br />
+
+            <p id="infoText">Default text</p>
+            <button id="save">Save</button>
+            <button id="reset">Reset</button>
+            <button id="close">Close</button>
+            <i id="loading" class="fa-solid fa-rotate fa-spin fa-2x"></i>
+        </div>
+        <script src="options.js"></script>
+    </body>
+</html>

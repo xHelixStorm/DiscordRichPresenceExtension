@@ -1,0 +1,35 @@
+{
+  "name": "Discord Rich Presence Extension",
+  "description": "Send requests to a local application and create rich presence activities on Discord!",
+  "version": "1.0",
+  "manifest_version": 3,
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "storage",
+    "activeTab",
+    "tabs",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://*/",
+    "https://*/"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "/images/fumbi16.png",
+      "32": "/images/fumbi32.png",
+      "48": "/images/fumbi48.png",
+      "128": "/images/fumbi128.png"
+    }
+  },
+  "icons": {
+    "16": "/images/fumbi16.png",
+    "32": "/images/fumbi32.png",
+    "48": "/images/fumbi48.png",
+    "128": "/images/fumbi128.png"
+  },
+  "options_page": "options.html"
+}

@@ -1,0 +1,31 @@
+body {
+    background-color: aliceblue;
+    min-width: 180px;
+}
+
+button {
+    border-radius: 10px;
+    inline-size: max-content;
+    padding-left: 12px;
+    padding-right: 12px;
+    display: block;
+    margin: auto;
+}
+
+button:hover {
+    opacity: 0.8;
+}
+
+i {
+    margin-right: 3px;
+    color: cadetblue;
+}
+
+label {
+    inline-size: max-content;
+    font-weight: bold;
+}
+
+#synchDate {
+    margin-left: 3px;
+}
