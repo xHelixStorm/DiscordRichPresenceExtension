@@ -65,9 +65,14 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
                     status.tabTarget = tab;
                 }
             }
-
-            if (status && status.active && !tab.active) {
-                stopDiscordActivity(status);
+            if (!status || (status && tab.url == status.sourceUrl)) {
+                validateNewActiveTab(data, status, tabId, tab);
+            }
+            else if (status && tab.url != status.sourceUrl && status.targetRequired && status.sourceReady && urlFilter(status.profile, tab, false)) {
+                validateTargetTab(status);
+            }
+            else if (status && status.active && !tab.active) {
+                stopDiscordActivity(data, status);
             }
             else if (tab.active && status && status.active != undefined && !status.active) {
                 updateDiscordActivity(status);
@@ -76,16 +81,10 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
                 updateDiscordActivity(status);
             }
             else if (!tab.audible && status && status.profile.Audible && status.active) {
-                stopDiscordActivity(status);
-            }
-            else if (!status || (status && tab.url == status.sourceUrl)) {
-                validateNewActiveTab(tabId, tab);
-            }
-            else if (status && tab.url != status.sourceUrl && status.targetRequired && status.sourceReady && !status.active) {
-                validateTargetTab(status);
+                stopDiscordActivity(data, status);
             }
             else if (status && status.active) {
-                stopDiscordActivity(status, true);
+                stopDiscordActivity(data, status, true);
             }
             else if(status) {
                 chrome.storage.local.remove(tabId+"");
@@ -164,7 +163,7 @@ var updateDiscordActivity = function (status) {
     });
 }
 
-var stopDiscordActivity = (status, remove) => {
+var stopDiscordActivity = (data, status, remove, callback) => {
     if (status && status.active) {
         var request = new Request(data.host + ":" + data.port + "/activity");
         var headers = new Headers({
@@ -181,12 +180,20 @@ var stopDiscordActivity = (status, remove) => {
             if (response.ok) {
                 if (!remove) {
                     status.active = false;
-                    chrome.storage.local.set({ [status.tabId]: status });
+                    chrome.storage.local.set({ [status.tabId]: status }, () => {
+                        updateDiscordActivity();
+                        if (callback)
+                            callback(undefined, undefined, status.tabId, status.tab);
+                    });
                 }
                 else {
-                    chrome.storage.local.remove(status.tabId + "");
+                    chrome.storage.local.remove(status.tabId + "", () => {
+                        updateDiscordActivity();
+                        if (callback)
+                            callback(undefined, undefined, status.tabId, status.tab);
+                    });
                 }
-                updateDiscordActivity();
+                
             }
         });
     }
@@ -194,34 +201,34 @@ var stopDiscordActivity = (status, remove) => {
 
 var getOuterHtmlVal = {};
 
-var validateNewActiveTab = function (tabId, tab) {
-    chrome.storage.local.get("profiles", (data) => {
-        if (data.profiles) {
-            var profile = data.profiles.filter(profile => { return urlFilter(profile, tab, true); });
+var validateNewActiveTab = function (data, status, tabId, tab) {
+    if (status && status.active) {
+        stopDiscordActivity(data, status, true, validateNewActiveTab);
+    }
+    else {
+        chrome.storage.local.get("profiles", (data) => {
+            if (data.profiles) {
+                var profile = data.profiles.filter(profile => { return urlFilter(profile, tab, true); });
 
-            if (profile && profile.length > 0) {
-                profile = profile[0];
-                //Save the current tab
-                var status = { profile: profile, tabId: tabId, tab: tab, sourceUrl: tab.url };
-                getOuterHtmlVal = { tabId: tabId };
-                chrome.storage.local.set({ [tabId]: status}, () => {
-                    chrome.scripting.executeScript({ target: { tabId: tabId }, files: ["scripts/getHtmlSource.js"] });
-                });
+                if (profile && profile.length > 0) {
+                    profile = profile[0];
+                    //Save the current tab
+                    var status = { profile: profile, tabId: tabId, tab: tab, sourceUrl: tab.url };
+                    getOuterHtmlVal = { tabId: tabId };
+                    chrome.storage.local.set({ [tabId]: status }, () => {
+                        chrome.scripting.executeScript({ target: { tabId: tabId }, files: ["scripts/getHtmlSource.js"] });
+                    });
+                }
             }
-        }
-    });
+        });
+    }
 };
 
 var validateTargetTab = (status) => {
-    if (urlFilter(status.profile, status.tabTarget, false)) {
-        getOuterHtmlVal = { tabId: status.tabId };
-        chrome.storage.local.set({ [status.tabTarget.id]: status }, () => {
-            chrome.scripting.executeScript({ target: { tabId: status.tabId }, files: ["scripts/getHtmlSource.js"] });
-        });
-    }
-    else {
-        chrome.storage.local.remove(status.tabId+"");
-    }
+    getOuterHtmlVal = { tabId: status.tabId };
+    chrome.storage.local.set({ [status.tabTarget.id]: status }, () => {
+        chrome.scripting.executeScript({ target: { tabId: status.tabId }, files: ["scripts/getHtmlSource.js"] });
+    });
 };
 
 var urlFilter = function (profile, tab, isSource) {
@@ -473,7 +480,7 @@ var validateClickOnTab = (event) => {
 var formatClickField = (key, status, event) => {
     var field = status.profile[key];
     var expression = field.match(/\{::click:.*::\}/)[0];
-    var elements = expression.replace("{::click:", "").replace("::}", "");
+    var elements = expression.replace("{::click:", "").replace(/::\}$/, "");
     var indexStart = -1;
     var indexEnd = -1;
     var positions = [];
@@ -678,7 +685,7 @@ var compareTagWithDom = function (tag, event) {
     if (tag.node == event.node) {
         var valid = true;
         for (var attribute of tag.attributes) {
-            if (event.attributes.filter(attr => attr.attribute == attribute.attribute && (attribute.value == null || (!attr.isRegex && attr.value == attribute.value) || (attr.isRegex && new RegExp(attr.value).test(attribute.value)))).length > 0) {
+            if (event.attributes.filter(attr => attr.attribute == attribute.attribute && (attribute.value == null || (!attribute.isRegex && attr.value == attribute.value) || (attribute.isRegex && new RegExp(attribute.value).test(attr.value)))).length > 0) {
                 valid = true;
             }
             else {
