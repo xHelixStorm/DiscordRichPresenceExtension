@@ -441,10 +441,10 @@ var validateLocationValue = (value, status, isSource) => {
                 var attribute = el.attributes.filter(attr => attr.attribute == key);
                 if (attribute.length > 0) {
                     attribute = attribute[0];
-                    return field.replace(expression, attribute.value);
+                    return value.replace(expression, attribute.value);
                 }
                 else {
-                    return field;
+                    return value;
                 }
             }
             else {
