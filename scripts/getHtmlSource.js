@@ -6,7 +6,7 @@ var DomToArray = function (elements) {
             var numKey = parseInt(key);
             el[numKey] = {
                 id: element.id,
-                url: element.baseURI,
+                url: window.location.href,
                 innerHtml: element.innerHTML,
                 innerText: element.innerText,
                 node: element.localName,
