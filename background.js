@@ -66,7 +66,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
                 }
             }
             if (status && changeInfo.active != undefined && !changeInfo.active) {
-                stopDiscordActivity(data, status);
+                stopDiscordActivity(data, status, !urlFilter(status.profile, tab, !status.targetRequired));
             }
             else if (status && changeInfo.active) {
                 updateDiscordActivity(status);
@@ -84,7 +84,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
                 validateTargetTab(status);
             }
             else if (status && status.active) {
-                stopDiscordActivity(data, status, true);
+                stopDiscordActivity(data, status, !urlFilter(status.profile, tab, !status.targetRequired));
             }
             else if(status) {
                 chrome.storage.local.remove(tabId+"");
