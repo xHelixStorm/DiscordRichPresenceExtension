@@ -75,7 +75,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
                 updateDiscordActivity(status);
             }
             else if (status && status.profile.Audible && !tab.audible && status.active) {
-                stopDiscordActivity(data, status, status.profile.Url != tab.url);
+                stopDiscordActivity(data, status, !urlFilter(status.profile, tab, !status.targetRequired));
             }
             else if (!status || (status && tab.url == status.sourceUrl)) {
                 validateNewActiveTab(data, status, tabId, tab);
@@ -272,9 +272,9 @@ var validateNewActiveTab = function (data, status, tabId, tab) {
 };
 
 var validateTargetTab = (status) => {
-    getOuterHtmlVal = { tabId: status.tabId };
+    getOuterHtmlVal = { tabId: status.tabTarget.id };
     chrome.storage.local.set({ [status.tabTarget.id]: status }, () => {
-        chrome.scripting.executeScript({ target: { tabId: status.tabId }, files: ["scripts/getHtmlSource.js"] });
+        chrome.scripting.executeScript({ target: { tabId: status.tabTarget.id }, files: ["scripts/getHtmlSource.js"] });
     });
 };
 
