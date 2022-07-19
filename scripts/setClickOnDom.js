@@ -1,6 +1,6 @@
 document.body.addEventListener("click", (event) => {
     var returnEvent = {
-        url: event.target.baseURI,
+        url: window.location.href,
         innerHtml: event.target.innerHTML,
         innerText: event.target.innerText,
         node: event.target.localName,
