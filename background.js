@@ -20,13 +20,15 @@ chrome.runtime.onMessage.addListener((request, sender) => {
     if (request.action == "getHtmlSource") {
         chrome.storage.local.get(null, (data) => {
             var status = data[getOuterHtmlVal.tabId];
-            var isSource = (!status.targetRequired || (status.targetRequired && request.source[0].url == status.sourceUrl));
-            if (isSource)
-                status.documentSource = request.source;
-            else
-                status.documentTarget = request.source;
-            validateProfileValues(status, isSource);
-            getOuterHtmlVal = {};
+            if (status) {
+                var isSource = (!status.targetRequired || (status.targetRequired && request.source[0].url == status.sourceUrl));
+                if (isSource)
+                    status.documentSource = request.source;
+                else
+                    status.documentTarget = request.source;
+                validateProfileValues(status, isSource);
+                getOuterHtmlVal = {};
+            }
         });
     }
     else if (request.action == "getDomClick") {
@@ -238,7 +240,7 @@ var validateNewActiveTab = function (data, status, tabId, tab) {
         stopDiscordActivity(data, status, true, validateNewActiveTab);
     }
     else {
-        if (data.profiles) {
+        if (data && data.profiles) {
             var profile = data.profiles.filter(profile => { return urlFilter(profile, tab, true) });
             if (profile && profile.length > 0) {
                 profile = profile[0];
