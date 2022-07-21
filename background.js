@@ -244,7 +244,7 @@ var validateNewActiveTab = function (data, status, tabId, tab) {
             var profile = data.profiles.filter(profile => { return urlFilter(profile, tab, true) });
             if (profile && profile.length > 0) {
                 profile = profile[0];
-                if (status && status.sourceReady && !status.profile.Reload) return;
+                if (status && status.sourceReady && !status.profile.Reload && tab.url != status.profile.Url) return;
                 var status = { profile: profile, tabId: tabId, tab: tab, sourceUrl: tab.url };
                 getOuterHtmlVal = { tabId: tabId };
                 chrome.storage.local.set({ [tabId]: status }, () => {
@@ -500,7 +500,7 @@ var validateLocationValue = (value, status, isSource) => {
         var positions = findPosition(status, tag, isSource);
         if (positions.length > 0) {
             elements = elements.substring(curElement.length);
-            var el = undefined;
+            var el = getElementOfPosition(positions, 0, document);
 
             do {
                 indexStart = elements.indexOf("<");
