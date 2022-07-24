@@ -79,7 +79,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
             else if (status && status.profile.Audible && !tab.audible && status.active) {
                 stopDiscordActivity(data, status, !urlFilter(status.profile, tab, !status.targetRequired));
             }
-            else if (!status || (status && tab.url == status.sourceUrl)) {
+            else if (!status || (status && tab.url == status.sourceUrl) || (status && urlFilter(status.profile, tab, true))) {
                 validateNewActiveTab(data, status, tabId, tab);
             }
             else if (status && tab.url != status.sourceUrl && status.targetRequired && status.sourceReady && urlFilter(status.profile, tab, false)) {
@@ -244,7 +244,7 @@ var validateNewActiveTab = function (data, status, tabId, tab) {
             var profile = data.profiles.filter(profile => { return urlFilter(profile, tab, true) });
             if (profile && profile.length > 0) {
                 profile = profile[0];
-                //Save the current tab
+                if (status && status.sourceReady && !status.profile.Reload && tab.url != status.profile.Url) return;
                 var status = { profile: profile, tabId: tabId, tab: tab, sourceUrl: tab.url };
                 getOuterHtmlVal = { tabId: tabId };
                 chrome.storage.local.set({ [tabId]: status }, () => {
@@ -315,7 +315,7 @@ var urlFilter = function (profile, tab, isSource) {
         for (var key in expressions) {
             patternUrl = patternUrl.replace(expressions[key].expression, expressions[key].pattern);
         }
-        return new RegExp(patternUrl).test(url);
+        return new RegExp("^" + patternUrl + "$").test(url);
     }
     else {
         return url.trim() == urlFormat.trim();
@@ -486,50 +486,86 @@ var validateLocationValue = (value, status, isSource) => {
     var expression = value.match(/\{::location:.*::\}/);
     if (expression) {
         expression = expression[0];
-        var element = expression.replace("{::location:", "").replace(/::\}$/, "");
-        var indexStart = element.indexOf("<");
-        var indexEnd = element.indexOf(">");
+        var elements = expression.replace("{::location:", "").replace(/::\}$/, "");
+        var indexStart = elements.indexOf("<");
+        var indexEnd = elements.indexOf(">");
         if (indexStart == -1 || indexEnd == -1) return origValue;
-        var curElement = element.substring(indexStart, indexEnd + 1);
+        var curElement = elements.substring(indexStart, indexEnd + 1);
         var tag = separateHtmlTag(curElement);
         var document;
         if (isSource)
             document = status.documentSource;
         else
             document = status.documentTarget;
-        var el = getElementOfPosition(findPosition(status, tag, isSource), 0, document);
-        if (el) {
-            element = element.substring(curElement.length);
-            if (element.startsWith(":")) {
-                key = element.substring(1);
-                var regex = "";
-                if (new RegExp(/^.*:\{::regex:.*::\}/).test(key)) {
-                    regex = key.match(/:\{::regex:.*::\}/)[0];
-                    key = key.replace(regex, "");
-                    regex = regex.replace(":{::regex:", "").replace("::}");
+        var positions = findPosition(status, tag, isSource);
+        if (positions.length > 0) {
+            elements = elements.substring(curElement.length);
+            var el = getElementOfPosition(positions, 0, document);
+
+            do {
+                indexStart = elements.indexOf("<");
+                indexEnd = elements.indexOf(">");
+                if (indexStart == -1 || indexEnd == -1) break;
+                curElement = elements.substring(indexStart, indexEnd + 1);
+
+                if (elements.startsWith("up")) {
+                    elements = elements.substring("up".length);
+                    positions.pop();
+                    el = getElementOfPosition(positions, 0, document);
+                    var tag = separateHtmlTag(curElement);
+                    if (!compareTagWithDom(tag, el)) {
+                        return origValue;
+                    }
                 }
-                var attribute = el.attributes.filter(attr => attr.attribute == key);
-                if (attribute.length > 0) {
-                    attribute = attribute[0];
-                    if (regex.length > 0) {
-                        attribute.value = attribute.value.match(new RegExp(regex));
-                        if (attribute.value.length > 0) {
-                            return value.replace(expression, attribute.value[0]);
+                else if (elements.startsWith("down")) {
+                    elements = elements.substring("down".length);
+                    var tag = separateHtmlTag(curElement);
+                    el = getElementOfChildrenPosition(positions, 0, tag, document);
+                    if (el) {
+                        positions[positions.length] = el.position;
+                    }
+                    else {
+                        return origValue;
+                    }
+                }
+                elements = elements.substring(curElement.length);
+            } while (indexStart != -1 && indexEnd != -1);
+
+            if (el) {
+                if (elements.startsWith(":")) {
+                    key = elements.substring(1);
+                    var regex = "";
+                    if (new RegExp(/^.*:\{::regex:.*::\}/).test(key)) {
+                        regex = key.match(/:\{::regex:.*::\}/)[0];
+                        key = key.replace(regex, "");
+                        regex = regex.replace(":{::regex:", "").replace("::}");
+                    }
+                    var attribute = el.attributes.filter(attr => attr.attribute == key);
+                    if (attribute.length > 0) {
+                        attribute = attribute[0];
+                        if (regex.length > 0) {
+                            attribute.value = attribute.value.match(new RegExp(regex));
+                            if (attribute.value.length > 0) {
+                                return value.replace(expression, attribute.value[0]);
+                            }
+                            else {
+                                return value;
+                            }
                         }
                         else {
-                            return value;
+                            return value.replace(expression, attribute.value);
                         }
                     }
                     else {
-                        return value.replace(expression, attribute.value);
+                        return value;
                     }
                 }
                 else {
-                    return value;
+                    return value.replace(expression, el.innerText);
                 }
             }
             else {
-                return value.replace(expression, el.innerText);
+                return origValue;
             }
         }
         else {
@@ -715,6 +751,10 @@ var getElementOfChildrenPosition = function (positions, index, tag, dom) {
     else {
         var count = 0;
         for (var el of dom) {
+            if (tag.index != -1 && tag.index != count) {
+                count++;
+                continue;
+            }
             if (compareTagWithDom(tag, el)) {
                 el.position = count;
                 return el;
@@ -741,6 +781,9 @@ var separateHtmlTag = function (element) {
         }
         else if (tempValue.length > 0 && !tempValue.endsWith("\"")) {
             tempValue = tempValue + " " + values[i];
+        }
+        else if (new RegExp(/^\[[\d]{1,}\]$/).test(values[i])) {
+            tag.index = parseInt(values[i].replaceAll(/[\[\]]/g, ""));
         }
         else {
             tempAttribute = values[i];
@@ -775,6 +818,8 @@ var separateHtmlTag = function (element) {
 
     if (!tag.attributes)
         tag.attributes = [];
+    if (!tag.index)
+        tag.index = -1;
 
     return tag;
 };
