@@ -315,7 +315,7 @@ var urlFilter = function (profile, tab, isSource) {
         for (var key in expressions) {
             patternUrl = patternUrl.replace(expressions[key].expression, expressions[key].pattern);
         }
-        return new RegExp(patternUrl).test(url);
+        return new RegExp("^" + patternUrl + "$").test(url);
     }
     else {
         return url.trim() == urlFormat.trim();
