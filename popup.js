@@ -11,6 +11,28 @@ chrome.storage.local.get("lastSynch", (data) => {
     $("#synchDate").text(data.lastSynch);
 });
 
+chrome.storage.local.get(null, (data) => {
+    if (data) {
+        for (var key in data) {
+            if (new RegExp(/^[\d]{1,}$/).test(key) && data[key].active) {
+                var status = data[key];
+                $("#tab").text(status.targetRequired ? status.tabTarget.id : status.tab.id);
+                $("#profileName").text(status.profile.ProfileName);
+                $("#name").text(status.profile.Name);
+                $("#state").text(status.profile.State);
+                $("#details").text(status.profile.Details);
+                $("#largeImage").text(status.profile.LargeImage);
+                $("#largeText").text(status.profile.LargeText);
+                $("#smallImage").text(status.profile.SmallImage);
+                $("#smallText").text(status.profile.SmallText);
+                $("#key").text(status.profile.Key);
+
+                $("#profile").show();
+            }
+        }
+    }
+});
+
 document.getElementById("synch").addEventListener("click", () => {
     $("#synchIcon").addClass("fa-spin");
 
@@ -33,5 +55,24 @@ document.getElementById("synch").addEventListener("click", () => {
         }
     }).fail(function (jqXHR) {
         $("#synchIcon").removeClass("fa-spin");
+    });
+});
+
+document.getElementById("stopProfile").addEventListener("click", () => {
+    $.ajax({
+        url: host + ":" + port + "/activity",
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        data: JSON.stringify({ action: "stop" }),
+        success: (response) => {
+            var tabId = $("#tab").text();
+            chrome.storage.local.get(tabId, (status) => {
+                if (!status) return;
+                status.active = false;
+                chrome.storage.local.set({ [tabId]: status }, () => {
+                    $("#profile").hide();
+                });
+            });
+        }
     });
 });

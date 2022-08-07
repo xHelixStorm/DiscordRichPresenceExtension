@@ -128,16 +128,10 @@ var updateDiscordActivity = function (status, tabId) {
             }
         }
         else {
-            var keys = Object.keys(data).filter(key => data[key].tabId != tabId && new RegExp(/^[\d]*$/).test(key) && data[key].active != undefined && !data[key].active);
+            var keys = Object.keys(data).filter(key => new RegExp(/^[\d]*$/).test(key) && data[key].tabId != tabId && data[key].active != undefined && !data[key].active && !data[key].profile.Audible);
             if (keys.length > 0) {
                 update = true;
-                var audibleStatus = keys.filter(key => data[key].profile.Audible && ((!data[key].targetRequired && data[key].tab.audible) || data[key].tabTarget.audible));
-                if (audibleStatus.length > 0) {
-                    status = data[audibleStatus[0]];
-                }
-                else {
-                    status = data[keys[0]];
-                }
+                status = data[keys[0]];
             }
         }
 

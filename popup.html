@@ -7,7 +7,43 @@
 </head>
 <body>
     <button id="synch"><i id="synchIcon" class="fa-solid fa-rotate"></i>Synch Domains</button><br />
-    <label>Last synch:</label><label id="synchDate"></label>
+    <div style="text-align: center;">
+        <label>Last synch:</label><span id="synchDate"></span>
+    </div>
+    <br />
+    <div id="profile" style="display: none;">
+        <button id="stopProfile"><i class="fa-solid fa-stop" style="color: inherit;"></i>Stop Activity</button>
+        <div id="profileDetails">
+            <span id="tab" style="display: none;"></span>
+
+            <label>Profile Name:</label>
+            <span id="profileName"></span><br />
+
+            <label>Name:</label>
+            <span id="name"></span><br />
+
+            <label>State:</label>
+            <span id="state"></span><br />
+
+            <label>Details:</label>
+            <span id="details"></span><br />
+
+            <label>Large Image:</label>
+            <span id="largeImage"></span><br />
+
+            <label>Large Text:</label>
+            <span id="largeText"></span><br />
+
+            <label>Small Image:</label>
+            <span id="smallImage"></span><br />
+
+            <label>Small Text:</label>
+            <span id="smallText"></span><br />
+
+            <label>Key:</label>
+            <span id="key"></span>
+        </div>
+    </div>
     <script src="popup.js"></script>
 </body>
 </html>
